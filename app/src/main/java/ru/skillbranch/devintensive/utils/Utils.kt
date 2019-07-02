@@ -16,6 +16,14 @@ object Utils {
 
 
     fun toInitials(firstName: String?, lastName: String?): String? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val firstLetter: String = (firstName?.getOrNull(0)?.toUpperCase() ?: "").toString().trim()
+        val secondLetter: String = (lastName?.getOrNull(0)?.toUpperCase() ?: "").toString().trim()
+        val letterSum = "$firstLetter$secondLetter"
+
+        return if (letterSum.isBlank()) {
+            null
+        } else {
+            letterSum
+        }
     }
 }
