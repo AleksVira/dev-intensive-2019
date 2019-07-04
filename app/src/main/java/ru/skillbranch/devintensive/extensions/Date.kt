@@ -4,11 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.absoluteValue
 
-//const val SECOND = 1000L
-//const val MINUTE = 60 * SECOND
-//const val HOUR = 60 * MINUTE
-//const val DAY = 24 * HOUR
-
 fun Date.format(pattern: String = "HH:mm:ss dd.MM.yy", localeString: String = "ru"): String {
     val dateFormat = SimpleDateFormat(pattern, Locale(localeString))
     return dateFormat.format(this)
@@ -16,16 +11,6 @@ fun Date.format(pattern: String = "HH:mm:ss dd.MM.yy", localeString: String = "r
 
 fun Date.add(value: Int, units: TimeUnits = TimeUnits.SECOND): Date {
     time += value * units.value
-/*
-    var time = this.time
-    time += when (units) {
-        TimeUnits.SECOND -> value * TimeUnits.SECOND.value
-        TimeUnits.MINUTE -> value * TimeUnits.MINUTE.value
-        TimeUnits.HOUR -> value * TimeUnits.HOUR.value
-        TimeUnits.DAY -> value * TimeUnits.DAY.value
-    }
-    this.time = time
-*/
     return this
 }
 
@@ -37,18 +22,27 @@ fun Date.humanizeDiff(date: Date = Date()): String {
         in 0..1 -> "только что"
         in 2..45 -> if (past) "несколько секунд назад" else "через несколько секунд"
         in 45..75 -> if (past) "минуту назад" else "через минуту"
-        in 75..45.minutes -> if (past) "${diffInSeconds.toMinutes} минут${minEnding(diffInSeconds.toMinutes)} назад" else "через ${diffInSeconds.toMinutes} минут${minEnding(diffInSeconds.toMinutes)}"
+        in 75..45.minutes -> if (past) "${TimeUnits.MINUTE.plural(diffInSeconds.toMinutes)} назад" else "через ${TimeUnits.MINUTE.plural(diffInSeconds.toMinutes)}"
         in 45.minutes..75.minutes -> if (past) "час назад" else "через час"
-        in 75.minutes..22.hours -> if (past) "${diffInSeconds.toHours} час${hourEnding(diffInSeconds.toHours)} назад" else "через ${diffInSeconds.toHours} час${hourEnding(diffInSeconds.toHours)}"
+        in 75.minutes..22.hours -> if (past) "${TimeUnits.HOUR.plural(diffInSeconds.toHours)} назад" else "через ${TimeUnits.HOUR.plural(diffInSeconds.toHours)}"
         in 22.hours..26.hours -> if (past) "день назад" else "через день"
-        in 26.hours..360.days -> if (past) "${diffInSeconds.toDays} ${dayEnding(diffInSeconds.toDays)} назад" else "через ${diffInSeconds.toDays} ${dayEnding(diffInSeconds.toDays)}"
+        in 26.hours..360.days -> if (past) "${TimeUnits.DAY.plural(diffInSeconds.toDays)} назад" else "через ${TimeUnits.DAY.plural(diffInSeconds.toDays)}"
         else -> if (past) "более года назад" else "более чем через год"
     }
 
 }
 
-fun minEnding(toMinutes: Long): String {
-    val minutes = toMinutes.toInt()
+fun secEnding(seconds: Int): String {
+    val lastDigit = seconds % 10
+    return when {
+        seconds in 6..20 -> ""
+        lastDigit == 1 -> "у"   // 1, 21, 31, 41, 51, 61, 71
+        lastDigit in 2..4 -> "ы"
+        else -> ""
+    }
+}
+
+fun minEnding(minutes: Int): String {
     val lastDigit = minutes % 10
     return when {
         minutes in 6..20 -> ""
@@ -58,8 +52,7 @@ fun minEnding(toMinutes: Long): String {
     }
 }
 
-fun hourEnding(toHours: Long): String {
-    val hours = toHours.toInt()
+fun hourEnding(hours: Int): String {
     val lastDigit = hours % 10
     return when {
         hours in 5..20 -> "ов"
@@ -69,8 +62,7 @@ fun hourEnding(toHours: Long): String {
     }
 }
 
-fun dayEnding(toDays: Long): String {
-    val days = toDays.toInt()
+fun dayEnding(days: Int): String {
     val lastDigit = days % 10
     return when {
         days % 100 in 5..20 -> "дней"
@@ -82,16 +74,26 @@ fun dayEnding(toDays: Long): String {
 
 
 enum class TimeUnits(val value: Long) {
-    SECOND(1000L),
-    MINUTE(60 * SECOND.value),
-    HOUR(60 * MINUTE.value),
-    DAY(24 * HOUR.value)
+    SECOND(1000L) {
+        override fun plural(value: Int): String = "$value секунд${secEnding(value)}"
+    },
+    MINUTE(60 * SECOND.value) {
+        override fun plural(value: Int): String = "$value минут${minEnding(value)}"
+    },
+    HOUR(60 * MINUTE.value) {
+        override fun plural(value: Int): String = "$value час${hourEnding(value)}"
+    },
+    DAY(24 * HOUR.value) {
+        override fun plural(value: Int): String = "$value ${dayEnding(value)}"
+    };
+
+    abstract fun plural(value: Int): String
 }
 
 
 val Int.minutes get() = this * TimeUnits.MINUTE.value / 1000
-val Long.toMinutes get() = this * 1000 / TimeUnits.MINUTE.value
+val Long.toMinutes: Int get() = (this * 1000 / TimeUnits.MINUTE.value).toInt()
 val Int.hours get() = this * TimeUnits.HOUR.value / 1000
-val Long.toHours get() = this * 1000 / TimeUnits.HOUR.value
+val Long.toHours: Int get() = (this * 1000 / TimeUnits.HOUR.value).toInt()
 val Int.days get() = this * TimeUnits.DAY.value / 1000
-val Long.toDays get() = this * 1000 / TimeUnits.DAY.value
+val Long.toDays:Int get() = (this * 1000 / TimeUnits.DAY.value).toInt()
