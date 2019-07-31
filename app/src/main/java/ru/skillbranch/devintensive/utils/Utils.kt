@@ -1,79 +1,95 @@
 package ru.skillbranch.devintensive.utils
 
+import android.content.Context
+import java.lang.StringBuilder
+
+
+
 object Utils {
-    fun parseFullName(fullName: String?): Pair<String?, String?> {
-        val parts: List<String>? = fullName?.trim()?.split(" ")
-        val strFirst = parts?.getOrNull(0)
-        val strSecond = parts?.getOrNull(1)
-        val firstName = if (strFirst.isNullOrEmpty()) null else strFirst
-        val lastName = if (strSecond.isNullOrEmpty()) null else strSecond
+    fun parseFullName(fullName: String?): Pair<String?, String?>{
+        val parts = fullName?.trim()?.split(" ")
+        val firstName = parts?.getOrNull(0)?.ifEmpty { null }
+        val lastName = parts?.getOrNull(1)?.ifEmpty { null }
+
         return firstName to lastName
     }
 
     fun transliteration(payload: String, divider: String = " "): String {
-        val words = payload.split(" ").map {
-            it.replace(Regex("[$it]")) { result -> charToTranslit(result) }
-        }
-        return words.joinToString(divider)
+        val map = fillTranslitMap()
+        val builder = StringBuilder()
+
+        for (char in payload.trim())
+            builder.append(getTranslChar(char, map))
+
+        return builder.toString().replace(" ", divider)
     }
 
-    private fun charToTranslit(result: MatchResult): String {
-        var stringToConvert = result.value
-        val isCap = stringToConvert[0].isUpperCase()
-        if (isCap) {
-            stringToConvert = stringToConvert.toLowerCase()
-        }
-        var converted = when (stringToConvert) {
-            "а" -> "a"
-            "б" -> "b"
-            "в" -> "v"
-            "г" -> "g"
-            "д" -> "d"
-            "е" -> "e"
-            "ё" -> "e"
-            "ж" -> "zh"
-            "з" -> "z"
-            "и" -> "i"
-            "й" -> "i"
-            "к" -> "k"
-            "л" -> "l"
-            "м" -> "m"
-            "н" -> "n"
-            "о" -> "o"
-            "п" -> "p"
-            "р" -> "r"
-            "с" -> "s"
-            "т" -> "t"
-            "у" -> "u"
-            "ф" -> "f"
-            "х" -> "h"
-            "ц" -> "c"
-            "ч" -> "ch"
-            "ш" -> "sh"
-            "щ" -> "sh'"
-            "ъ" -> ""
-            "ы" -> "i"
-            "ь" -> ""
-            "э" -> "e"
-            "ю" -> "yu"
-            "я" -> "ya"
-            else -> stringToConvert
-        }
-        if (isCap) {
-            converted = converted.capitalize()
-        }
-        return converted
+    private fun getTranslChar(char: Char, map: HashMap<Char, String>): String {
+        val transl  = map[char.toLowerCase()] ?: char.toString()
+
+        return if (char.isUpperCase() && transl.isNotEmpty())
+            transl.capitalize()
+        else transl
     }
 
+    private fun fillTranslitMap(): HashMap<Char, String> {
+        val map = hashMapOf<Char, String>()
+        map['а'] = "a"
+        map['б'] = "b"
+        map['в'] = "v"
+        map['г'] = "g"
+        map['д'] = "d"
+        map['е'] = "e"
+        map['ё'] = "e"
+        map['ж'] = "zh"
+        map['з'] = "z"
+        map['и'] = "i"
+        map['й'] = "i"
+        map['к'] = "k"
+        map['л'] = "l"
+        map['м'] = "m"
+        map['н'] = "n"
+        map['о'] = "o"
+        map['п'] = "p"
+        map['р'] = "r"
+        map['с'] = "s"
+        map['т'] = "t"
+        map['у'] = "u"
+        map['ф'] = "f"
+        map['х'] = "h"
+        map['ц'] = "c"
+        map['ч'] = "ch"
+        map['ш'] = "sh"
+        map['щ'] = "sh'"
+        map['ъ'] = ""
+        map['ы'] = "i"
+        map['ь'] = ""
+        map['э'] = "e"
+        map['ю'] = "yu"
+        map['я'] = "ya"
+
+        return map
+    }
 
     fun toInitials(firstName: String?, lastName: String?): String? {
-        val firstLetter: String = (firstName?.getOrNull(0)?.toUpperCase() ?: "").toString().trim()
-        val secondLetter: String = (lastName?.getOrNull(0)?.toUpperCase() ?: "").toString().trim()
-        val letterSum = "$firstLetter$secondLetter"
-        return if (letterSum.isBlank()) {
-            null
-        } else {
-            letterSum
-        }
+        val name = firstName.orEmpty().trim().getOrNull(0)?.toUpperCase()
+        val surname = lastName.orEmpty().trim().getOrNull(0)?.toUpperCase()
+        val firstInit = name?.toString() ?: ""
+        val secondInit = surname?.toString() ?: ""
+        return "$firstInit$secondInit".ifEmpty { null }
+    }
+
+    fun convertPxToDp(context: Context, px: Int): Int {
+        val scale = context.resources.displayMetrics.density
+        return (px / scale + 0.5f).toInt()
+    }
+
+    fun convertDpToPx(context: Context, dp: Int): Int {
+        val scale = context.resources.displayMetrics.density
+        return (dp * scale + 0.5f).toInt()
+    }
+
+    fun convertSpToPx(context: Context, sp: Int): Int {
+        return sp * context.resources.displayMetrics.scaledDensity.toInt()
     }
 }
