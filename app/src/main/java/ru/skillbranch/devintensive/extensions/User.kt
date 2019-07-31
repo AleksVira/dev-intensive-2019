@@ -14,8 +14,8 @@ fun User.toUserView(): UserView{
         id,
         fullName = "$firstName $lastName",
         avatar =  avatar,
-        nickName = nickName ,
-        initials = initials ,
+        nickName = nickName,
+        initials = initials,
         status = status)
 }
 
